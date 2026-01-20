@@ -38,6 +38,7 @@ use crate::scorers::author_diversity_scorer::AuthorDiversityScorer;
 use crate::scorers::oon_scorer::OONScorer;
 use crate::scorers::phoenix_scorer::PhoenixScorer;
 use crate::scorers::weighted_scorer::WeightedScorer;
+use crate::scorers::GvScorer;
 use crate::selectors::TopKScoreSelector;
 use crate::side_effects::cache_request_info_side_effect::CacheRequestInfoSideEffect;
 use crate::sources::phoenix_source::PhoenixSource;
@@ -119,14 +120,16 @@ impl PhoenixCandidatePipeline {
             Box::new(AuthorSocialgraphFilter),
         ];
 
-        // Scorers
+        // Scorers (🔥 Gv inserted here 🔥)
         let phoenix_scorer = Box::new(PhoenixScorer { phoenix_client });
         let weighted_scorer = Box::new(WeightedScorer);
+        let gv_scorer = Box::new(GvScorer);
         let author_diversity_scorer = Box::new(AuthorDiversityScorer::default());
         let oon_scorer = Box::new(OONScorer);
         let scorers: Vec<Box<dyn Scorer<ScoredPostsQuery, PostCandidate>>> = vec![
             phoenix_scorer,
             weighted_scorer,
+            gv_scorer,
             author_diversity_scorer,
             oon_scorer,
         ];
@@ -193,7 +196,7 @@ impl PhoenixCandidatePipeline {
             ProdVisibilityFilteringClient::new(
                 S2S_CHAIN_PATH.clone(),
                 S2S_CRT_PATH.clone(),
-                S2S_KEY_PATH.clone()
+                S2S_KEY_PATH.clone(),
             )
             .await
             .expect("Failed to create VF client"),
@@ -221,6 +224,7 @@ impl CandidatePipeline<ScoredPostsQuery, PostCandidate> for PhoenixCandidatePipe
     fn sources(&self) -> &[Box<dyn Source<ScoredPostsQuery, PostCandidate>>] {
         &self.sources
     }
+
     fn hydrators(&self) -> &[Box<dyn Hydrator<ScoredPostsQuery, PostCandidate>>] {
         &self.hydrators
     }
